@@ -1,0 +1,22 @@
+{
+  "name": "domit-showcase",
+  "version": "1.0.0",
+  "description": "Slice of a production multi-tenant SaaS — CreateTenant use case with pure TypeScript domain and unit tests",
+  "private": true,
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.8.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "moduleFileExtensions": ["ts", "js"],
+    "testMatch": ["**/__tests__/**/*.spec.ts"]
+  }
+}
