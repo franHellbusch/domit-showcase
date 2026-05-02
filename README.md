@@ -14,13 +14,13 @@ Domit is a B2B SaaS platform for Argentine real estate agencies. Each agency get
 
 The main repository is private — it contains client data and production credentials. This showcase is a slice of the tenant provisioning module extracted specifically for portfolio review. The code here is real production code. It was not written for this showcase.
 
-What you will find in this repo: the `CreateTenant` use case in full, including its domain entities, value objects, repository interfaces (ports), domain errors, and 248 lines of unit tests. No real database needed to run anything.
+What you will find in this repo: the `CreateTenant` use case in full, including its domain entities, value objects, repository interfaces (ports), domain errors, and 13 unit tests covering the full provisioning flow (validation, persistence, atomicity, error cases). No real database needed to run anything.
 
 ---
 
 ## What this showcase demonstrates
 
-1. **Pure TypeScript domain** — `packages/domain` imports zero NestJS, Prisma, or framework code. Only TypeScript and Node built-ins. Verifiable: `grep -r "@nestjs\|@prisma\|express" packages/domain/src` returns no results. This is the actual package.json: two devDependencies — `typescript` and `@types/node`. That's it.
+1. **Pure TypeScript domain** — The `domain/` folder imports zero NestJS, Prisma, or framework code. Only TypeScript and Node built-ins. Verifiable: `grep -r "@nestjs\|@prisma\|express" domain/` returns no results. This is the actual package.json: two devDependencies — `typescript` and `@types/node`. That's it.
 
 2. **Value Objects that encode business invariants** — `TenantSlug.create()` enforces format (3–50 chars, lowercase alphanumeric + hyphens) and rejects system-reserved words (`api`, `admin`, `www`, etc.) with typed domain errors. `Email.create()` enforces RFC format. A controller that receives a `TenantSlug` already knows it is valid — the validation lives in the type, not scattered across layers.
 
@@ -28,7 +28,7 @@ What you will find in this repo: the `CreateTenant` use case in full, including 
 
 4. **Atomic provisioning** — creating a tenant requires writing to five tables: Tenant, Subscription, TenantConfig, User (ADMIN role), and AuditLog. If any write fails, none of them land. This is enforced via `prisma.$transaction` in the infrastructure adapter. The use case itself handles zero rollback logic — that is the adapter's responsibility.
 
-5. **Unit tests with no database** — 248 lines of Jest tests that exercise the use case end-to-end using in-memory repository stubs. No Docker, no migrations, no environment variables. `npm test` from a clean clone is enough.
+5. **Unit tests with no database** — 13 Jest tests that exercise the use case end-to-end using in-memory repository stubs. No Docker, no migrations, no environment variables. `npm test` from a clean clone is enough.
 
 ---
 
@@ -49,25 +49,27 @@ What you will find in this repo: the `CreateTenant` use case in full, including 
 ## Showcase structure
 
 ```
-showcase-staging/
-├── domain/
-│   ├── entities/
-│   │   ├── tenant.entity.ts
-│   │   └── subscription.entity.ts
-│   ├── value-objects/
-│   │   ├── tenant-slug.vo.ts
-│   │   └── email.vo.ts
-│   ├── repositories/
-│   │   ├── tenant.repository.ts        (interface / port)
-│   │   └── subscription.repository.ts  (interface / port)
-│   ├── errors/
-│   │   ├── invalid-slug.error.ts
-│   │   ├── invalid-email.error.ts
-│   │   └── slug-already-taken.error.ts
-│   └── use-cases/
-│       └── create-tenant.use-case.ts
-└── __tests__/
-    └── create-tenant.use-case.spec.ts
+├── .gitignore
+├── package.json
+├── tsconfig.json
+├── __tests__/
+│   └── create-tenant.use-case.spec.ts
+└── domain/
+    ├── entities/
+    │   ├── subscription.entity.ts
+    │   ├── tenant.entity.ts
+    │   └── user.entity.ts
+    ├── errors/
+    │   ├── invalid-email.error.ts
+    │   ├── invalid-slug.error.ts
+    │   └── slug-already-taken.error.ts
+    ├── repositories/
+    │   └── tenant.repository.ts        (interface / port)
+    ├── use-cases/
+    │   └── create-tenant.use-case.ts
+    └── value-objects/
+        ├── email.vo.ts
+        └── tenant-slug.vo.ts
 ```
 
 What was removed from the main repo when extracting this slice: the NestJS module wiring (`tenants.module.ts`), the Prisma concrete repositories (the adapters that implement the port interfaces), the HTTP controllers and DTOs, Swagger decorators, and all cross-module dependencies. The domain layer required no changes — it was already isolated by design.
@@ -77,7 +79,7 @@ What was removed from the main repo when extracting this slice: the NestJS modul
 ## Running the showcase locally
 
 ```bash
-git clone [url del showcase]
+git clone https://github.com/franHellbusch/domit-showcase.git
 cd domit-showcase
 npm install
 npm test
@@ -91,7 +93,7 @@ No database required. No environment variables required. The tests run entirely 
 
 ### 1. Domain with zero framework imports
 
-`packages/domain` is vanilla TypeScript. NestJS, Prisma, Express — all of those are infrastructure details. They implement the interfaces the domain defines, not the other way around. This boundary is enforced by the package's `package.json`: it declares no runtime dependencies beyond the Node built-ins.
+The `domain/` folder is vanilla TypeScript. NestJS, Prisma, Express — all of those are infrastructure details. They implement the interfaces the domain defines, not the other way around. This boundary is enforced by the package's `package.json`: it declares no runtime dependencies beyond the Node built-ins.
 
 The practical consequence: you can test every business rule without spinning up the application. The domain's test suite runs in milliseconds. Refactoring the HTTP layer or swapping Prisma for a different ORM does not touch a single domain file.
 
